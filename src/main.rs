@@ -6,5 +6,6 @@ fn main() {
     let argv = env::args().collect::<Vec<String>>();
     let pid  = argv[1].parse::<u32>().unwrap();
 
-    let _injector = Injector::from_pid(pid).unwrap();
+    let injector = Injector::from_pid(pid).unwrap();
+    println!("UWP: {}", injector.is_uwp());
 }

@@ -1,7 +1,8 @@
 use crate::catch_unwrap;
 use crate::error::{InjectorError, InjectorResult};
-use windows::Win32::Foundation::{CloseHandle, HANDLE};
+use windows::Win32::Foundation::{CloseHandle, HANDLE, WIN32_ERROR};
 use windows::Win32::System::Threading::{OpenProcess, PROCESS_ALL_ACCESS};
+use windows::Win32::Storage::Packaging::Appx::GetPackageFamilyName;
 
 /// Shared library injection implementation, should be dropped after injection.
 pub struct Injector(HANDLE);
@@ -14,6 +15,18 @@ impl Injector {
         });
 
         Ok(Self(handle))
+    }
+
+    /// Returns if the process is a UWP one. 
+    pub fn is_uwp(&self) -> bool {
+        let mut size = 0;
+
+        // If GetPackageFamilyName returns ERROR_INSUFFICIENT_BUFFER (122) then the app is likely UWP.
+        if unsafe { GetPackageFamilyName(self.0, &mut size, None) } == WIN32_ERROR(122) {
+            return true;
+        }
+
+        false
     }
 }
 
