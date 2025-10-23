@@ -1,5 +1,7 @@
 use std::ptr;
 use std::mem;
+use std::fmt;
+use std::path::PathBuf;
 use core::ffi::c_void;
 use crate::{catch_unwrap, pcwstr};
 use crate::error::{InjectorError, InjectorResult};
@@ -218,5 +220,33 @@ impl Drop for Injector {
     fn drop(&mut self) {
         // If this returns an error then something is really wrong, assume success.
         let _close_result = unsafe { CloseHandle(self.process) };
+    }
+}
+
+/// Wrapper around a `PathBuf` for libraries.
+#[derive(Debug, PartialEq, Clone)]
+pub struct ModuleEntry(PathBuf);
+
+impl ModuleEntry {
+    /// Creates a new `ModuleEntry` instance.
+    pub fn new(path: PathBuf) -> Self {
+        Self(path)
+    }
+
+    /// Gets the internal path as a `String`.
+    pub fn get_path(&self) -> String {
+        self.0.display().to_string()
+    }
+
+    /// Gets the filename for this module.
+    pub fn get_name(&self) -> String {
+        // We only accept shared library files and should always have a filename.
+        self.0.file_name().unwrap().display().to_string()
+    }
+}
+
+impl fmt::Display for ModuleEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.get_name())
     }
 }

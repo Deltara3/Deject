@@ -1,9 +1,10 @@
+use crate::strings::GuiStr;
+use deject::injector::ModuleEntry;
+use std::sync::mpsc::{self, Receiver};
 use eframe::{App, Frame};
 use egui::{Button, CentralPanel, Checkbox, Color32, ComboBox, Context, Label, RichText, ScrollArea, TextEdit, Widget};
 use egui_flex::{item, Flex, FlexAlign};
 use windows::Win32::Foundation::HWND;
-use std::sync::mpsc::{self, Receiver};
-use crate::strings::GuiStr;
 
 /// Graphical interface implementation.
 pub struct Deject {
@@ -22,9 +23,9 @@ pub struct Deject {
     /// Current process index.
     ps_cur:    usize,
     /// List of added modules.
-    mod_list:  Vec<String>,
+    mod_list:  Vec<ModuleEntry>,
     /// Current module selection.
-    mod_sel:   Option<String>,
+    mod_sel:   Option<ModuleEntry>,
     /// Determines if we should clean up.
     cleanup:   bool,
     /// Determines if we should free the library after.
@@ -37,12 +38,6 @@ pub struct Deject {
 
 impl Default for Deject {
     fn default() -> Self {
-        let mut mod_buf = vec![];
-
-        for i in 0..100 {
-            mod_buf.push(i.to_string());
-        }
-
         Self {
             window:    HWND::default(),
             status:    "Idle".to_owned(),
@@ -51,7 +46,7 @@ impl Default for Deject {
             in_buf:    String::new(),
             ps_list:   vec![],
             ps_cur:    0,
-            mod_list:  mod_buf,
+            mod_list:  vec![],
             mod_sel:   None,
             cleanup:   false,
             do_free:   false,
