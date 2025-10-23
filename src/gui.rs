@@ -1,5 +1,5 @@
 use eframe::{App, Frame};
-use egui::{CentralPanel, Button, ComboBox, Checkbox, Context, Label, ScrollArea, TextEdit, RichText, Color32};
+use egui::{Button, CentralPanel, Checkbox, Color32, ComboBox, Context, Label, RichText, ScrollArea, TextEdit, Widget};
 use egui_flex::{item, Flex, FlexAlign};
 use windows::Win32::Foundation::HWND;
 use std::sync::mpsc::{self, Receiver};
@@ -201,10 +201,12 @@ impl App for Deject {
             });
 
             // Render inject button.
-            Flex::horizontal().w_full().grow_items(1.0).show(ui, |flex| {
-                if flex.add(item(), Button::new(GuiStr::BUTTON_INJECT)).clicked() {
+            ui.horizontal_centered(|ui| {
+                ui.add_enabled_ui(self.ps_list.len() != 0, |ui| {
+                    if ui.add(Button::new(GuiStr::BUTTON_INJECT).min_size([ui.available_width(), 0.0].into())).clicked() {
 
-                }
+                    }
+                });
             });
         });
     }
