@@ -3,12 +3,13 @@
 mod gui;
 mod strings;
 
+pub use std::sync::Arc;
 pub use core::ffi::c_void;
 pub use crate::gui::Deject;
 pub use deject::{catch_unwrap, pcwstr};
 pub use egui_phosphor::Variant;
 pub use eframe::{run_native, NativeOptions, CreationContext, App};
-pub use egui::{ViewportBuilder, FontData, FontDefinitions, FontFamily, TextStyle};
+pub use egui::{ViewportBuilder, FontData, FontDefinitions, FontFamily, TextStyle, IconData};
 pub use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 pub use windows::Win32::UI::WindowsAndMessaging::{MessageBoxW, MB_OK, MB_ICONERROR};
 pub use windows::Win32::Foundation::HWND;
@@ -16,10 +17,18 @@ pub use windows::core::{PCWSTR, HSTRING, w};
 pub use std::error::Error;
 
 fn main() {
+    let ico  = image::load_from_memory(include_bytes!("../assets/icon.ico"));
+    let icon = IconData {
+        rgba:   ico.unwrap().to_rgba8().to_vec(),
+        width:  256,
+        height: 256 
+    };
+    
     let viewport = ViewportBuilder::default()
         .with_inner_size([320.0, 310.0])
         .with_resizable(false)
-        .with_maximize_button(false);
+        .with_maximize_button(false)
+        .with_icon(icon);
 
     let options = NativeOptions {
         viewport,

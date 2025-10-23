@@ -10,3 +10,6 @@ target
 
 # Contains mutation testing data.
 **/mutants.out*/
+
+# Compiled icon file
+assets/icon.ico
