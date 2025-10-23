@@ -24,7 +24,7 @@ use gui_deps::*;
 fn main() {
     if cfg!(feature = "gui") {
         let viewport = ViewportBuilder::default()
-            .with_inner_size([320.0, 378.0])
+            .with_inner_size([320.0, 310.0])
             .with_resizable(false)
             .with_maximize_button(false);
 

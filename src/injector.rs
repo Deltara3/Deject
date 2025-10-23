@@ -38,8 +38,10 @@ type RoutineCallback = unsafe extern "system" fn(*mut c_void) -> u32;
 pub struct Injector {
     /// Remote process associated with this `Injector` instance.
     process: HANDLE,
-    /// Determines if `Injector` instance should perform cleanup operations.
-    cleanup: bool
+    /// Determines if the `Injector` instance should perform cleanup operations.
+    cleanup: bool,
+    /// If this the process was determined to UWP.
+    pub uwp: bool
 }
 
 impl Injector {
@@ -49,10 +51,14 @@ impl Injector {
             return Err(InjectorError::OpenProcessFailed);
         });
 
-        Ok(Self {
+        let mut injector = Self {
             process: handle,
-            cleanup: do_cleanup
-        })
+            cleanup: do_cleanup,
+            uwp:     false
+        };
+
+        injector.uwp = injector.is_uwp();
+        Ok(injector)
     }
 
     /// Finds all processes matching an image name.
@@ -66,9 +72,9 @@ impl Injector {
 
         // Create process entry structure.
         let mut process = PROCESSENTRY32W::default();
-        process.dwFlags = mem::size_of::<PROCESSENTRY32W>() as u32;
+        process.dwSize  = mem::size_of::<PROCESSENTRY32W>() as u32;
 
-        // Get all Process IDs.
+        // Search through all Process IDs.
         if unsafe { Process32FirstW(snapshot, &mut process) }.is_ok() {
             loop {
                 if unsafe { PCWSTR(process.szExeFile.as_ptr()).display().to_string() } == *process_name {
@@ -82,12 +88,17 @@ impl Injector {
         }
 
         // Close snapshot handle when done.
-        let _close_reuslt = unsafe { CloseHandle(snapshot) };
-        Ok(output)
+        let _close_result = unsafe { CloseHandle(snapshot) };
+        
+        // Return an error if the output is empty.
+        match output.len() {
+            0 => Err(InjectorError::NoProcesses),
+            _ => Ok(output)
+        }
     }
 
     /// Returns if the process is a UWP one. 
-    pub fn is_uwp(&self) -> bool {
+    fn is_uwp(&self) -> bool {
         let mut size = 0;
 
         // If GetPackageFamilyName returns ERROR_INSUFFICIENT_BUFFER (122) then the app is likely UWP.
@@ -100,7 +111,7 @@ impl Injector {
 
     //  TODO: Handle all errors?
     /// Fixes the access control on libraries when a process is detected as UWP.
-    pub fn fix_access_control(module: &String) {
+    fn fix_access_control(module: &String) {
         let pc_module  = pcwstr!(module);
 
         let mut security_descriptor = PSECURITY_DESCRIPTOR::default();
@@ -169,6 +180,11 @@ impl Injector {
         let pc_module  = pcwstr!(module);
         let module_len = unsafe { pc_module.as_wide() }.len() * 2 + 2;
 
+        // Fix module permissions if UWP.
+        if self.uwp {
+            Self::fix_access_control(module);
+        }
+
         // Allocate memory in the remote process, handling any error.
         let remote_addr = unsafe { VirtualAllocEx(self.process, None, module_len, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE) };
         if remote_addr.is_null() {
@@ -197,7 +213,7 @@ impl Injector {
 
         // Transmute LoadLibraryW so we can pass it to CreateRemoteThread.
         let routine: RoutineCallback = unsafe { mem::transmute(load_library) };
-
+        
         // Create remote thread to inject the given library.
         let thread_result = unsafe { CreateRemoteThread(self.process, None, 0, Some(routine), Some(remote_addr), 0, None) };
         let thread_handle = catch_unwrap!(thread_result, |_err| {

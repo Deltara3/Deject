@@ -4,7 +4,7 @@ use std::fmt;
 pub type InjectorResult<T> = Result<T, InjectorError>;
 
 /// The error type that is returned by `Injector` instances.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum InjectorError {
     /// Returned when an `Injector` fails to open a process.
     OpenProcessFailed,
@@ -19,7 +19,9 @@ pub enum InjectorError {
     /// Returned when an `Injector` fails to create a remote thread.
     CreateThreadFailed,
     /// Returned when an `Injector` fails to take a process snapshot.
-    SnapshotFailed
+    SnapshotFailed,
+    /// Returned when an `Injector` fails to find any processes.
+    NoProcesses
 }
 
 impl fmt::Display for InjectorError {
@@ -33,7 +35,8 @@ impl fmt::Display for InjectorError {
             GetModuleFailed    => "Failed to get remote module handle",
             GetProcedureFailed => "Failed to get remote procedure address",
             CreateThreadFailed => "Failed to create remote thread",
-            SnapshotFailed     => "Failed to take process snapshot"
+            SnapshotFailed     => "Failed to take process snapshot",
+            NoProcesses        => "No processes matching given name found"
         })
     }
 }
