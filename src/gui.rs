@@ -3,7 +3,7 @@ use crate::strings::GuiStr;
 use deject::injector::ModuleEntry;
 use std::sync::mpsc::{self, Receiver};
 use eframe::{App, Frame};
-use egui::{Button, CentralPanel, Checkbox, Color32, ComboBox, Context, Label, RichText, ScrollArea, TextEdit, Widget};
+use egui::{Button, CentralPanel, Checkbox, Color32, ComboBox, Context, Label, RichText, ScrollArea, TextEdit, Vec2};
 use egui_flex::{item, Flex, FlexAlign};
 use windows::Win32::Foundation::{HWND, MAX_PATH};
 use windows::Win32::UI::Controls::Dialogs::{GetOpenFileNameW, OPENFILENAMEW, OFN_PATHMUSTEXIST, OFN_FILEMUSTEXIST};
@@ -99,33 +99,37 @@ impl App for Deject {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         CentralPanel::default().show(ctx, |ui| {
             // Render tabs.
-            Flex::horizontal().w_full().grow_items(1.0).gap([2.0, 0.0].into()).show(ui, |flex| {
-                let name_tab = Button::new(GuiStr::TAB_PROCESS_NAME).selected(self.use_name);
-                if flex.add(item(), name_tab).clicked() && !self.use_name {
-                    self.use_name = true;
-                    self.in_buf.clear();
-                }
+            ui.add_enabled_ui(!self.injecting, |ui| {
+                Flex::horizontal().w_full().grow_items(1.0).gap([2.0, 0.0].into()).show(ui, |flex| {
+                    let name_tab = Button::new(GuiStr::TAB_PROCESS_NAME).selected(self.use_name);
+                    if flex.add(item(), name_tab).clicked() && !self.use_name {
+                        self.use_name = true;
+                        self.in_buf.clear();
+                    }
 
-                let id_tab = Button::new(GuiStr::TAB_PROCESS_ID).selected(!self.use_name);
-                if flex.add(item(), id_tab).clicked() && self.use_name {
-                    self.use_name = false;
-                    self.in_buf.clear();
-                }
+                    let id_tab = Button::new(GuiStr::TAB_PROCESS_ID).selected(!self.use_name);
+                    if flex.add(item(), id_tab).clicked() && self.use_name {
+                        self.use_name = false;
+                        self.in_buf.clear();
+                    }
+                });
             });
 
             ui.separator();
             ui.add(Label::new(GuiStr::TEXT_INPUT_LABEL).selectable(false));
 
             // Render text entry and search button.
-            Flex::horizontal().w_full().gap([2.0, 0.0].into()).show(ui, |flex| {
-                if flex.add(item().grow(1.0), TextEdit::singleline(&mut self.in_buf)).changed() && !self.use_name {
-                    self.in_buf.retain(|ch| ch.is_ascii_digit());
-                }
-
-                flex.add_ui(item().grow(0.0), |ui| {
-                    if ui.add_enabled(self.use_name, Button::new(GuiStr::BUTTON_SEARCH)).clicked() {
-
+            ui.add_enabled_ui(!self.injecting, |ui| {
+                Flex::horizontal().w_full().gap([2.0, 0.0].into()).show(ui, |flex| {
+                    if flex.add(item().grow(1.0), TextEdit::singleline(&mut self.in_buf)).changed() && !self.use_name {
+                        self.in_buf.retain(|ch| ch.is_ascii_digit());
                     }
+
+                    flex.add_ui(item().grow(0.0), |ui| {
+                        if ui.add_enabled(self.use_name, Button::new(GuiStr::BUTTON_SEARCH)).clicked() {
+
+                        }
+                    });
                 });
             });
 
@@ -133,7 +137,7 @@ impl App for Deject {
             ui.add(Label::new(GuiStr::TEXT_LIST_LABEL).selectable(false));
 
             // Render process list.
-            ui.add_enabled_ui(self.use_name && self.ps_list.len() > 0, |ui| {
+            ui.add_enabled_ui(self.use_name && self.ps_list.len() > 0 && !self.injecting, |ui| {
                 ComboBox::from_id_salt("ps-list").width(ui.available_width()).show_index(
                     ui,
                     &mut self.ps_cur,
@@ -154,17 +158,23 @@ impl App for Deject {
                 flex.add(item(), Label::new(GuiStr::TEXT_MODULE_LABEL).selectable(false));
                 flex.grow();
 
-                if flex.add(item(), Button::new(GuiStr::BUTTON_RESET)).clicked() {
+                flex.add_ui(item(), |ui| {
+                    if ui.add_enabled((self.mod_list.len() != 0) && !self.injecting, Button::new(GuiStr::BUTTON_RESET)).clicked() {
 
-                }
+                    }
+                });
 
-                if flex.add(item(), Button::new(GuiStr::BUTTON_REMOVE)).clicked() {
+                flex.add_ui(item(), |ui| {
+                    if ui.add_enabled(self.mod_sel.is_some() && !self.injecting, Button::new(GuiStr::BUTTON_REMOVE)).clicked() {
 
-                }
+                    }
+                });
 
-                if flex.add(item(), Button::new(GuiStr::BUTTON_ADD)).clicked() {
-
-                }
+                flex.add_ui(item(), |ui| {
+                    if ui.add_enabled(!self.injecting, Button::new(GuiStr::BUTTON_ADD)).clicked() {
+                        
+                    }
+                });
             });
 
             let row_height  = ui.spacing().interact_size.y;
@@ -182,7 +192,7 @@ impl App for Deject {
                         let mod_button  = Button::selectable(is_selected, text_data)
                             .min_size([ui.available_width(), 0.0].into());
 
-                        if ui.add(mod_button).clicked() {
+                        if ui.add(mod_button).clicked() && !self.injecting {
                             if !is_selected {
                                 self.mod_sel = Some(self.mod_list[mod_index].clone());
                             } else {
@@ -207,32 +217,41 @@ impl App for Deject {
             Flex::horizontal().w_full().show(ui, |flex| {
                 flex.add(item(), Label::new(GuiStr::CHECKBOX_CLEANUP).selectable(false));
                 flex.grow();
-                flex.add(item(), Checkbox::without_text(&mut self.cleanup));
+                flex.add_ui(item(), |ui| {
+                    ui.add_enabled(!self.injecting, Checkbox::without_text(&mut self.cleanup));
+                });
             });
 
             Flex::horizontal().w_full().show(ui, |flex| {
                 flex.add(item(), Label::new(GuiStr::CHECKBOX_FREE).selectable(false));
                 flex.grow();
-                flex.add(item(), Checkbox::without_text(&mut self.do_free));
+                flex.add_ui(item(), |ui| {
+                    ui.add_enabled(!self.injecting, Checkbox::without_text(&mut self.do_free));
+                });
             });
 
             Flex::horizontal().w_full().show(ui, |flex| {
                 flex.add(item(), Label::new(GuiStr::CHECKBOX_UWP).selectable(false));
                 flex.grow();
                 flex.add_ui(item(), |ui| {
-                    ui.add_enabled_ui(self.ps_list.len() != 0, |ui| {
-                        ui.add(Checkbox::without_text(&mut self.is_uwp));
-                    })
+                    ui.add_enabled((self.ps_list.len() != 0) && !self.injecting, Checkbox::without_text(&mut self.is_uwp));
                 });
             });
 
-            // Render inject button.
+            // Render stop and inject buttons.
             ui.horizontal_centered(|ui| {
-                ui.add_enabled_ui(self.ps_list.len() != 0, |ui| {
-                    if ui.add(Button::new(GuiStr::BUTTON_INJECT).min_size([ui.available_width(), 0.0].into())).clicked() {
+                ui.spacing_mut().item_spacing = [2.0, 0.0].into();
+                let button_size = Vec2::new(ui.available_width() / 2.0 - 2.0, 0.0);
 
-                    }
-                });
+                let stop_button = Button::new(GuiStr::BUTTON_STOP).min_size(button_size);
+                if ui.add_enabled(self.injecting, stop_button).clicked() {
+
+                }                    
+
+                let inject_button = Button::new(GuiStr::BUTTON_INJECT).min_size(button_size);
+                if ui.add_enabled((self.ps_list.len() != 0) && !self.injecting, inject_button).clicked() {
+
+                }
             });
         });
     }

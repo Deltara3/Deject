@@ -30,6 +30,8 @@ impl GuiStr {
     pub const BUTTON_RESET: &str      = Icon::ARROWS_CLOCKWISE;
     /// String used for the inject button.
     pub const BUTTON_INJECT: &str     = formatcp!("{} Inject", Icon::SYRINGE);
+    /// String used for the stop button.
+    pub const BUTTON_STOP: &str       = formatcp!("{} Stop", Icon::HAND_PALM);
     /// String used for the cleanup checkbox.
     pub const CHECKBOX_CLEANUP: &str  = formatcp!("{} Cleanup", Icon::BROOM);
     /// String used for the free library checkbox.
