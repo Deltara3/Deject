@@ -9,6 +9,7 @@ use windows::Win32::System::LibraryLoader::{GetModuleHandleW, GetProcAddress};
 use windows::Win32::Foundation::{CloseHandle, LocalFree, GENERIC_EXECUTE, GENERIC_READ, HANDLE, HLOCAL, WIN32_ERROR};
 use windows::Win32::System::Memory::{VirtualAllocEx, VirtualFreeEx, MEM_COMMIT, MEM_RESERVE, MEM_RELEASE, PAGE_READWRITE};
 use windows::Win32::System::Threading::{OpenProcess, CreateRemoteThread, WaitForSingleObject, INFINITE, PROCESS_ALL_ACCESS};
+use windows::Win32::System::Diagnostics::ToolHelp::{CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS};
 use windows::Win32::Storage::Packaging::Appx::GetPackageFamilyName;
 use windows::Win32::Security::{ACL, PSECURITY_DESCRIPTOR, PSID, DACL_SECURITY_INFORMATION, SUB_CONTAINERS_AND_OBJECTS_INHERIT};
 use windows::Win32::Security::Authorization::{
@@ -42,7 +43,7 @@ pub struct Injector {
 impl Injector {
     /// Constructs a new `Injector` from a Process ID.
     pub fn from_pid(pid: u32, do_cleanup: bool) -> InjectorResult<Self> {
-        let handle = catch_unwrap!(unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, pid) }, |_error| {
+        let handle = catch_unwrap!(unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, pid) }, |_err| {
             return Err(InjectorError::OpenProcessFailed);
         });
 
@@ -50,6 +51,37 @@ impl Injector {
             process: handle,
             cleanup: do_cleanup
         })
+    }
+
+    /// Finds all processes matching an image name.
+    pub fn find_by_name(process_name: &String) -> InjectorResult<Vec<u32>> {
+        let mut output = vec![];
+
+        // Create process snapshot, handling any error.
+        let snapshot = catch_unwrap!(unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) }, |_err| {
+            return Err(InjectorError::SnapshotFailed);
+        });
+
+        // Create process entry structure.
+        let mut process = PROCESSENTRY32W::default();
+        process.dwFlags = mem::size_of::<PROCESSENTRY32W>() as u32;
+
+        // Get all Process IDs.
+        if unsafe { Process32FirstW(snapshot, &mut process) }.is_ok() {
+            loop {
+                if unsafe { PCWSTR(process.szExeFile.as_ptr()).display().to_string() } == *process_name {
+                    output.push(process.th32ProcessID);
+                }
+
+                if unsafe { Process32NextW(snapshot, &mut process) }.is_err() {
+                    break;
+                }
+            }
+        }
+
+        // Close snapshot handle when done.
+        let _close_reuslt = unsafe { CloseHandle(snapshot) };
+        Ok(output)
     }
 
     /// Returns if the process is a UWP one. 

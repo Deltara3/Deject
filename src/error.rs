@@ -17,7 +17,9 @@ pub enum InjectorError {
     /// Returned when an `Injector` fails to retrieve a remote procedure address.
     GetProcedureFailed,
     /// Returned when an `Injector` fails to create a remote thread.
-    CreateThreadFailed
+    CreateThreadFailed,
+    /// Returned when an `Injector` fails to take a process snapshot.
+    SnapshotFailed
 }
 
 impl fmt::Display for InjectorError {
@@ -30,7 +32,8 @@ impl fmt::Display for InjectorError {
             RemoteWriteFailed  => "Failed to write memory at remote address",
             GetModuleFailed    => "Failed to get remote module handle",
             GetProcedureFailed => "Failed to get remote procedure address",
-            CreateThreadFailed => "Failed to create remote thread"
+            CreateThreadFailed => "Failed to create remote thread",
+            SnapshotFailed     => "Failed to take process snapshot"
         })
     }
 }
