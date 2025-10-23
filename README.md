@@ -18,4 +18,4 @@
 > Will be added after the project is functional.
 
 # License
-All code is licensed under the MIT License.
+All code is licensed under the MIT License. Ubuntu Sans Mono is distributed under the Ubuntu Font License.

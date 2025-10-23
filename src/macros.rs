@@ -22,3 +22,11 @@ macro_rules! catch_unwrap {
         compile_error!("catch_unwrap! requires a Result or Option followed by a closure (|e| {...} or || {...})");
     }
 }
+
+/// Creates a `PCWSTR` from any type that implements `Into` for `PCWSTR`.
+#[macro_export]
+macro_rules! pcwstr {
+    ($string:expr) => {
+        PCWSTR(HSTRING::from($string).as_ptr())
+    };
+}

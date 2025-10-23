@@ -1,7 +1,7 @@
 use std::ptr;
 use std::mem;
 use core::ffi::c_void;
-use crate::catch_unwrap;
+use crate::{catch_unwrap, pcwstr};
 use crate::error::{InjectorError, InjectorResult};
 use windows::core::{HSTRING, PCWSTR, PWSTR, PCSTR, w, s};
 use windows::Win32::System::Diagnostics::Debug::WriteProcessMemory;
@@ -33,7 +33,9 @@ type RoutineCallback = unsafe extern "system" fn(*mut c_void) -> u32;
 
 /// Shared library injection implementation, should be dropped after injection.
 pub struct Injector {
+    /// Remote process associated with this `Injector` instance.
     process: HANDLE,
+    /// Determines if `Injector` instance should perform cleanup operations.
     cleanup: bool
 }
 
@@ -65,7 +67,7 @@ impl Injector {
     //  TODO: Handle all errors?
     /// Fixes the access control on libraries when a process is detected as UWP.
     pub fn fix_access_control(module: &String) {
-        let pc_module = PCWSTR(HSTRING::from(module).as_ptr());
+        let pc_module  = pcwstr!(module);
 
         let mut security_descriptor = PSECURITY_DESCRIPTOR::default();
         let mut explicit_access     = EXPLICIT_ACCESS_W::default();
@@ -130,7 +132,7 @@ impl Injector {
 
     /// Injects a given library into the associated process.
     pub fn inject_dll(&self, module: &String) -> InjectorResult<()> {
-        let pc_module  = PCWSTR(HSTRING::from(module).as_ptr());
+        let pc_module  = pcwstr!(module);
         let module_len = unsafe { pc_module.as_wide() }.len() * 2 + 2;
 
         // Allocate memory in the remote process, handling any error.
