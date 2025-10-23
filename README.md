@@ -18,4 +18,4 @@
 > Will be added after the project is functional.
 
 # License
-All code is licensed under the MIT License. Ubuntu Sans Mono is distributed under the Ubuntu Font License.
+All code is licensed under the MIT License. Ubuntu Sans Mono is distributed under the Ubuntu Font License. The syringe asset from Twemoji is distributed under the Creative Commons Attribution 4.0 International Public License.
