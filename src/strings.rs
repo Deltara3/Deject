@@ -1,13 +1,9 @@
-#[cfg(feature = "gui")]
 use const_format::formatcp;
-#[cfg(feature = "gui")]
 use egui_phosphor::variants::light as Icon;
 
 /// Container for all GUI string objects.
-#[cfg(feature = "gui")]
 pub struct GuiStr;
 
-#[cfg(feature = "gui")]
 impl GuiStr {
     /// String used for the text input label.
     pub const TEXT_INPUT_LABEL: &str  = formatcp!("{} Name", Icon::TEXTBOX);

@@ -4,14 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-egui              = { version = "0.32.3", optional = true }
-egui_flex         = { version = "0.4.0", optional = true }
-egui-phosphor     = { version = "0.10.0", default-features = false, features = ["light"], optional = true }
-eframe            = { version = "0.32.3", optional = true }
-raw-window-handle = { version = "0.6.2", optional = true }
-const_format      = { version = "0.2.35", optional = true }
+egui              = "0.32.3"
+egui_flex         = "0.4.0"
+egui-phosphor     = { version = "0.10.0", default-features = false, features = ["light"] }
+eframe            = "0.32.3"
+raw-window-handle = "0.6.2"
+const_format      = "0.2.35"
 windows           = { version = "0.62.2", features = ["Win32_Security_Authorization", "Win32_Storage_Packaging_Appx", "Win32_System_Threading", "Win32_System_Memory", "Win32_System_LibraryLoader", "Win32_System_Diagnostics_Debug", "Win32_System_Diagnostics_ToolHelp", "Win32_UI_WindowsAndMessaging", "Win32_UI_Controls_Dialogs"] }
-
-[features]
-default = ["gui"]
-gui     = ["dep:egui", "dep:egui_flex", "dep:eframe", "dep:egui-phosphor", "dep:raw-window-handle", "dep:const_format"]
