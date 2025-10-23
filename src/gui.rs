@@ -1,10 +1,13 @@
+use std::mem;
 use crate::strings::GuiStr;
 use deject::injector::ModuleEntry;
 use std::sync::mpsc::{self, Receiver};
 use eframe::{App, Frame};
 use egui::{Button, CentralPanel, Checkbox, Color32, ComboBox, Context, Label, RichText, ScrollArea, TextEdit, Widget};
 use egui_flex::{item, Flex, FlexAlign};
-use windows::Win32::Foundation::HWND;
+use windows::Win32::Foundation::{HWND, MAX_PATH};
+use windows::Win32::UI::Controls::Dialogs::{GetOpenFileNameW, OPENFILENAMEW, OFN_PATHMUSTEXIST, OFN_FILEMUSTEXIST};
+use windows::core::{PCWSTR, PWSTR, w};
 
 /// Graphical interface implementation.
 pub struct Deject {
@@ -61,6 +64,34 @@ impl Deject {
     pub fn with_hwnd(mut self, window: HWND) -> Self {
         self.window = window;
         self
+    }
+
+    fn get_file(&self) -> Option<String> {
+        let mut file_buf = [0; MAX_PATH as usize];
+
+        let mut open_file         = OPENFILENAMEW::default();
+        open_file.lStructSize     = mem::size_of::<OPENFILENAMEW>() as u32;
+        open_file.hwndOwner       = self.window;
+        open_file.lpstrFile       = PWSTR(file_buf.as_mut_ptr());
+        open_file.nMaxFile        = MAX_PATH;
+        open_file.lpstrFilter     = w!("DLL Files (*.dll)\0*.dll\0");
+        open_file.nFilterIndex    = 1;
+        open_file.lpstrFileTitle  = PWSTR::null();
+        open_file.nMaxFileTitle   = 0;
+        open_file.lpstrInitialDir = PCWSTR::null();
+        open_file.Flags           = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+        if unsafe{ GetOpenFileNameW(&mut open_file) }.into() {
+            let buf_len   = file_buf.iter().take_while(|&&ch| ch != 0).count();
+            let buf_slice = &file_buf[..buf_len];
+
+            match String::from_utf16(buf_slice) {
+                Ok(path)  => return Some(path),
+                Err(_err) => return None
+            }
+        }
+
+        None
     }
 }
 
