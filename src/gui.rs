@@ -5,7 +5,7 @@ use crate::strings::GuiStr;
 use deject::error::InjectorResult;
 use deject::injector::{Injector, ModuleEntry};
 use eframe::{App, Frame};
-use egui::{Button, CentralPanel, Checkbox, Color32, ComboBox, Context, Label, RichText, ScrollArea, TextEdit};
+use egui::{Button, CentralPanel, Checkbox, ComboBox, Context, Label, ScrollArea, TextEdit};
 use egui_flex::{item, Flex, FlexAlign};
 use windows::Win32::Foundation::{HWND, MAX_PATH};
 use windows::Win32::UI::Controls::Dialogs::{GetOpenFileNameW, OPENFILENAMEW, OFN_PATHMUSTEXIST, OFN_FILEMUSTEXIST};
@@ -238,7 +238,7 @@ impl App for Deject {
             ui.add(Label::new(GuiStr::TEXT_STATUS_LABEL).selectable(false));
 
             // Render status.
-            ui.add(Label::new(RichText::from(self.status.clone()).color(Color32::WHITE)).selectable(false));
+            ui.add(Label::new(self.status.clone()).selectable(false));
 
             ui.separator();
 
