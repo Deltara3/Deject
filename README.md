@@ -10,7 +10,7 @@
 
 > [!NOTE]
 > If using the GNU toolchain, you may experience a `package.metadata does not exist` error.
-> This is a result of the `winres` crate not finding `windres` and can be resolved by setting the `DEJECT_WINDRES` environment variable.
+> This is a result of the `winres` crate not finding `windres` and can be resolved by setting the `DEJECT_WINDRES` environment variable to its path.
 
 - Install Rust from [rustup.rs](https://rustup.rs) if not installed.
 - Clone the repository and enter the folder with `git clone https://github.com/Deltara3/Deject && cd Deject`.
