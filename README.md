@@ -8,6 +8,10 @@
 > [!NOTE]
 > Precompiled binaries are currently unavailable. Please compile from source.
 
+> [!NOTE]
+> If using the GNU toolchain, you may experience `package.metadata does not exist` error.
+> This is a result of the `winres` crate not finding `windres` and can be resolved by setting the `DEJECT_WINDRES` environment variable.
+
 - Install Rust from [rustup.rs](https://rustup.rs) if not installed.
 - Clone the repository and enter the folder with `git clone https://github.com/Deltara3/Deject && cd Deject`.
 - For a debug build, run `cargo build`. For a release build, run `cargo build --release`.
