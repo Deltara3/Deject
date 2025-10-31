@@ -5,7 +5,7 @@ use crate::strings::GuiStr;
 use deject::error::InjectorResult;
 use deject::injector::{Injector, ModuleEntry};
 use eframe::{App, Frame};
-use egui::{Button, CentralPanel, Checkbox, ComboBox, Context, Label, ScrollArea, TextEdit};
+use egui::{Button, CentralPanel, Checkbox, ComboBox, Context, Label, ScrollArea, TextEdit, Key};
 use egui_flex::{item, Flex, FlexAlign};
 use windows::Win32::Foundation::{HWND, MAX_PATH};
 use windows::Win32::UI::Controls::Dialogs::{GetOpenFileNameW, OPENFILENAMEW, OFN_PATHMUSTEXIST, OFN_FILEMUSTEXIST};
@@ -134,11 +134,19 @@ impl App for Deject {
             // Render text entry and search button.
             ui.add_enabled_ui(!self.injecting, |ui| {
                 Flex::horizontal().w_full().gap([2.0, 0.0].into()).show(ui, |flex| {
-                    flex.add(item().grow(1.0), TextEdit::singleline(&mut self.in_buf));
+                    let search_box = flex.add(item().grow(1.0), TextEdit::singleline(&mut self.in_buf).return_key(None));
 
                     flex.add_ui(item().grow(0.0), |ui| {
-                        if ui.add_enabled(!self.in_buf.is_empty(), Button::new(GuiStr::BUTTON_SEARCH)).clicked() {
-                            match Injector::find_by_name(&self.in_buf) {
+                        let search_button = ui.add_enabled(!self.in_buf.is_empty(), Button::new(GuiStr::BUTTON_SEARCH));
+
+                        if (search_box.has_focus() && ui.input(|i| i.key_pressed(Key::Enter))) | search_button.clicked() {
+                            let mut actual_text = self.in_buf.clone();
+
+                            if !actual_text.ends_with(".exe") {
+                                actual_text.push_str(".exe");
+                            }
+                            
+                            match Injector::find_by_name(&actual_text) {
                                 Ok(list) => {
                                     self.status = "Idle".to_owned();
                                     self.ps_list = list;
